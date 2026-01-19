@@ -33,6 +33,10 @@ jobs:
             context: .
             file: hpf-platform/Dockerfile
             image: hpf-platform
+          - name: ml-trainer
+            context: .
+            file: hpf-platform/Dockerfile
+            image: hpf-ml-trainer
 
     steps:
       - name: Checkout repository
