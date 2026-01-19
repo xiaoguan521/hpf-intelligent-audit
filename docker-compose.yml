@@ -5,7 +5,7 @@ services:
   # 1. 核心数据平台 (ETL & ML)
   # ==========================================
   platform:
-    image: xiaoguan521/hpf-platform:latest
+    image: ghcr.io/xiaoguan521/hpf-platform:latest
     container_name: hpf-platform
     restart: unless-stopped
     volumes:
@@ -22,7 +22,7 @@ services:
   # 2. 审计系统后端 (API)
   # ==========================================
   audit-backend:
-    image: xiaoguan521/hpf-audit-backend:latest
+    image: ghcr.io/xiaoguan521/hpf-audit-backend:latest
     container_name: hpf-audit-backend
     restart: unless-stopped
     volumes:
@@ -40,7 +40,7 @@ services:
   # 3. 审计系统前端 (UI)
   # ==========================================
   audit-frontend:
-    image: xiaoguan521/hpf-audit-frontend:latest
+    image: ghcr.io/xiaoguan521/hpf-audit-frontend:latest
     container_name: hpf-audit-frontend
     restart: unless-stopped
     ports:
