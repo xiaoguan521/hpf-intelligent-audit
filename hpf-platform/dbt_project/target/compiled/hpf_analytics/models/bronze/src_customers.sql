@@ -1,0 +1,1 @@
+select * from "warehouse"."oracle_data"."GR_JCXX"

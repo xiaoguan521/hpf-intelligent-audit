@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  ml-trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hpf-ml-trainer
+    volumes:
+      # 数据持久化
+      - ./data:/app/data
+      # 模型输出
+      - ./hpf_platform/ml/models:/app/hpf_platform/ml/models
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: >
+      sh -c " echo '🚀 Starting ML Training Pipeline...' && python scripts/generate_mock_data.py && cd dbt_project && dbt deps && dbt run && cd .. && python hpf_platform/ml/train.py "
+    # 可选：限制资源
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '4'
+    #       memory: 8G

@@ -1,0 +1,1 @@
+select * from "warehouse"."main"."src_contracts"
