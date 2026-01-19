@@ -4,7 +4,7 @@ services:
   ml-trainer:
     # 使用 GitHub Container Registry 预构建镜像
     # 替换下面的 yourusername/yourrepo 为你的 GitHub 用户名和仓库名
-    image: ghcr.io/${GITHUB_REPOSITORY:-yourusername/yourrepo}/hpf-ml-trainer:latest
+    image: ghcr.io/xiaoguan521/hpf-intelligent-audit/hpf-ml-trainer:latest
 
     # 本地构建选项（取消注释以使用本地构建）
     # build:
@@ -28,8 +28,8 @@ services:
     # 默认启动但不执行，等待手动进入容器
     command: tail -f /dev/null
     # 可选：限制资源
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '8'
-    #       memory: 16G
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 16G
