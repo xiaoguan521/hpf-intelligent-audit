@@ -7,13 +7,17 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: docker.io
-  # TODO: Replace with your DockerHub username
-  IMAGE_NAMESPACE: xiaoguan521
+  REGISTRY: ghcr.io
+  # GitHub username or organization name
+  IMAGE_NAMESPACE: ${{ github.repository_owner }}
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
     strategy:
       matrix:
         include:
@@ -40,19 +44,19 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
-        # Only login if secrets are available
+      - name: Log in to the Container registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAMESPACE }}/${{ matrix.image }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.image }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
