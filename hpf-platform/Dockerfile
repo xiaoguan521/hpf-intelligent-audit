@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y \
 # ==========================================
 FROM base AS dependencies
 
-# 先复制 requirements，单独安装（这层变化较少）
-COPY hpf-common/setup.py hpf-common/README.md /tmp/hpf-common/
+# 先复制 pyproject.toml，单独安装（这层变化较少）
+COPY hpf-common/pyproject.toml hpf-common/README.md /tmp/hpf-common/
 COPY hpf-common/hpf_common /tmp/hpf-common/hpf_common
 WORKDIR /tmp/hpf-common
 
