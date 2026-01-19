@@ -2,14 +2,24 @@ version: 2
 
 models:
   - name: fct_loan_features
-    description: "贷款特征宽表 (用于 ML 训练)"
+    description: "贷款违约特征宽表。用于 ML 训练模型预测用户是否会逾期。"
     columns:
-      - name: contract_no
-        description: "合同编号"
+      - name: contract_id
+        description: "主键，合同ID"
         tests:
           - unique
           - not_null
+      
+      - name: target_label
+        description: "ML预测目标：历史是否逾期 (0=好人, 1=坏人)"
+        tests:
+          - not_null
+          - accepted_values: { values: [0, 1] }
+
       - name: loan_amount
         description: "贷款金额"
-      - name: loan_term_months
-        description: "贷款期限(月)"
+        tests:
+          - not_null
+          # 自定义逻辑测试：金额必须大于0
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"

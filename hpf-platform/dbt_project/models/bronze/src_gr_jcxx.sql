@@ -1,0 +1,1 @@
+select * from {{ source('oracle_data', 'GR_JCXX') }}

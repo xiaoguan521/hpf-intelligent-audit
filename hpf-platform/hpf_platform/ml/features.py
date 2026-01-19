@@ -3,6 +3,7 @@
 """
 import duckdb
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from typing import Tuple
 
@@ -32,6 +33,70 @@ def load_features(
     try:
         query = f"SELECT * FROM {schema}.{table_name}"
         df = conn.execute(query).df()
+        
+        # --- Preprocessing ---
+        print("🧹 Preprocessing features...")
+        
+        # 1. Drop IDs and Dates (non-features)
+        drop_cols = ['contract_id', 'loan_start_date']
+        
+        # 2. Drop Leakage (loan_status implies target)
+        # 关键修正：必须移除所有"未来"或"结果性"指标，只保留"申请时"特征
+        # overdue_count 和 total_repayment_periods 都是原来用来定义 Label 的，不能做 Feature
+        leakage_cols = ['loan_status', 'overdue_count', 'total_repayment_periods', 'actual_repayment_date', 'has_overdue_history_flag']
+        
+        for col in leakage_cols:
+            if col in df.columns:
+                drop_cols.append(col)
+            
+        df = df.drop(columns=[c for c in drop_cols if c in df.columns])
+        
+        # 3. Simple Encoding for Categorical
+        # Gender: M->0, F->1, U->2
+        if 'gender' in df.columns:
+            df['gender'] = df['gender'].map({'M': 0, 'F': 1, 'U': 2}).fillna(2)
+        
+        # Occupation: Encode based on stability (lower number = more stable)
+        if 'occupation' in df.columns:
+            occupation_map = {
+                'civil_servant': 0,  # Most stable
+                'teacher': 1,
+                'doctor': 2,
+                'engineer': 3,
+                'worker': 4,
+                'business_owner': 5,
+                'freelancer': 6      # Least stable
+            }
+            df['occupation'] = df['occupation'].map(occupation_map).fillna(4)
+        
+        # Encode new categorical features
+        if 'dti_category' in df.columns:
+            df['dti_category'] = df['dti_category'].map({'low_risk': 0, 'medium_risk': 1, 'high_risk': 2}).fillna(0)
+        
+        if 'age_group' in df.columns:
+            df['age_group'] = df['age_group'].map({'young': 0, 'prime': 1, 'mature': 2, 'senior': 3}).fillna(1)
+        
+        if 'income_level' in df.columns:
+            df['income_level'] = df['income_level'].map({'low_income': 0, 'middle_income': 1, 'high_income': 2}).fillna(1)
+        
+        if 'loan_duration_type' in df.columns:
+            df['loan_duration_type'] = df['loan_duration_type'].map({'short_term': 0, 'long_term': 1, 'ultra_long': 2}).fillna(0)
+            
+        # 4. Feature Engineering: Debt-to-Income Ratio (DTI)
+        # Avoid division by zero
+        if 'loan_amount' in df.columns and 'monthly_income' in df.columns:
+            df['dti_ratio'] = df['loan_amount'] / (df['monthly_income'] + 1.0)
+            
+            # Cross feature: age * dti interaction
+            if 'age' in df.columns:
+                df['age_dti_interaction'] = df['age'] * df['dti_ratio']
+            
+            # Log transform income to compress extreme values
+            df['log_income'] = np.log1p(df['monthly_income'])
+            
+        # Fill NaNs with 0
+        df = df.fillna(0)
+        
         print(f"✅ 加载特征: {len(df)} 行, {len(df.columns)} 列")
         return df
     finally:
@@ -40,7 +105,7 @@ def load_features(
 
 def prepare_training_data(
     df: pd.DataFrame, 
-    target_col: str = 'is_overdue',
+    target_col: str = 'target_label',  # Updated default
     test_size: float = 0.2,
     random_state: int = 42
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:

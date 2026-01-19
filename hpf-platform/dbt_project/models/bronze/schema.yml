@@ -1,10 +1,14 @@
 version: 2
-
 sources:
-  - name: oracle_data
-    description: "原始 Oracle 数据 (通过 ETL 同步)"
-    database: warehouse
-    schema: oracle_data
-    tables:
-      - name: GR_DK_HT
-        description: "贷款合同表"
+- name: oracle_data
+  schema: main  # Mock data generated in 'main'
+  tables:
+  - name: GR_DK_HKMX
+    identifier: src_repayments  # Map to new mock table
+    description: Source table GR_DK_HKMX mapped to src_repayments
+  - name: GR_DK_HT
+    identifier: src_contracts   # Map to new mock table
+    description: Source table GR_DK_HT mapped to src_contracts
+  - name: GR_JCXX
+    identifier: src_customers   # Map to new mock table
+    description: Source table GR_JCXX mapped to src_customers
