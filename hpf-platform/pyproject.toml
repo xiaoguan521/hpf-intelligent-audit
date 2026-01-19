@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hpf-platform"
+version = "1.0.0"
+description = "住房公积金数据平台(ETL + dbt + ML)"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "HPF Team"}
+]
+dependencies = [
+    "hpf-common[llm,db]>=1.0.0",
+    "dlt[duckdb]>=0.4",
+    "dbt-duckdb>=1.5",
+    "pyarrow>=14.0",
+    "oracledb>=2.0",
+    "scikit-learn>=1.3",
+    "fastapi>=0.100",
+    "uvicorn>=0.23",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+hpf-etl = "hpf_platform.etl.cli:main"
+hpf-platform = "hpf_platform.cli:main"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools]
+packages = ["hpf_platform"]
+

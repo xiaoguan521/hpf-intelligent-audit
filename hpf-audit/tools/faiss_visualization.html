@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FAISS Vector Store Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f0f2f6; }
+        .container { display: flex; height: 90vh; gap: 20px; }
+        .plot-area { flex: 2; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 10px; }
+        .info-area { flex: 1; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; overflow-y: auto; }
+        h1 { margin-top: 0; color: #333; }
+        .card { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .label { font-weight: bold; color: #666; font-size: 0.9em; }
+        #details-content { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Skill Vector Visualization (PCA)</h1>
+    <div class="container">
+        <div class="plot-area" id="plot"></div>
+        <div class="info-area">
+            <h2>Details</h2>
+            <div id="details">
+                <p>Hover over or click a point to see details.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var data = [{"x": -0.6113154292106628, "y": -5.175972361826098e-08, "name": "[System] Init Doc", "desc": "Initialization document", "type": "init"}, {"x": 0.6113153100013733, "y": -5.1759730723688335e-08, "name": "\u903e\u671f\u98ce\u9669\u7edf\u8ba1", "desc": "\u540d\u79f0\uff1a\u903e\u671f\u98ce\u9669\u7edf\u8ba1 \u529f\u80fd\uff1a\u6b64\u6280\u80fd\u7528\u4e8e\u7edf\u8ba1\u8d85\u8fc7\u8fd8\u6b3e\u65e53\u5929\u4ee5\u4e0a\u672a\u8fd8\u6b3e\u7684\u5408\u540c\u548c\u4e3b\u501f\u4eba\uff0c\u4ee5\u8bc6\u522b\u6f5c\u5728\u7684\u903e\u671f\u98ce\u9669\u3002 \u7528\u6237\u9700\u6c42\uff1a\u521b\u5efa\u4e00\u4e2a\u7528\u4e8e\u7edf\u8ba1\u903e\u671f\u98ce\u9669\u7684 skill, \u7edf\u8ba1\u8d85\u8fc7\u8fd8\u6b3e\u65e5\u5927\u4e8e 3 \u5929\u6ca1\u6709\u8fd8\u6b3e\u7684\u5408\u540c\u548c\u4e3b\u501f\u4eba \u53c2\u6570\uff1adays_overdue(\u903e\u671f\u5929\u6570\u9608\u503c\uff0c\u7528\u4e8e\u786e\u5b9a\u5408\u540c\u662f\u5426\u903e\u671f\u3002) \u6d89\u53ca\u8868\uff1aloans", "type": "skill"}];
+        
+        // Prepare Plotly traces
+        var trace = {
+            x: data.map(d => d.x),
+            y: data.map(d => d.y),
+            text: data.map(d => d.name),
+            mode: 'markers',
+            marker: {
+                size: 12,
+                color: data.map(d => d.type === 'init' ? '#ccc' : '#4CAF50'),
+                opacity: 0.8
+            },
+            type: 'scatter',
+            hoverinfo: 'text'
+        };
+
+        var layout = {
+            title: 'Semantic Space',
+            hovermode: 'closest',
+            dragmode: 'pan',
+            xaxis: { zeroline: false, showgrid: true },
+            yaxis: { zeroline: false, showgrid: true }
+        };
+
+        Plotly.newPlot('plot', [trace], layout, {responsive: true});
+
+        var plotDiv = document.getElementById('plot');
+        
+        // Click event
+        plotDiv.on('plotly_click', function(data){
+            var pt = data.points[0];
+            var idx = pt.pointIndex;
+            var item = window.data[idx];
+            
+            var html = `
+                <div class="card">
+                    <div class="label">Name</div>
+                    <h3>${item.name}</h3>
+                    <div class="label">Type</div>
+                    <div>${item.type}</div>
+                    <div class="label">Description</div>
+                    <p>${item.desc}</p>
+                </div>
+            `;
+            document.getElementById('details').innerHTML = html;
+        });
+        
+        // Hover event (optional, just name)
+    </script>
+</body>
+</html>
+    

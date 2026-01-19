@@ -1,0 +1,7 @@
+hpf_platform:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: '../data/warehouse.duckdb'
+      schema: analytics

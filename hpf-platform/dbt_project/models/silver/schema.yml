@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: stg_contracts
+    description: "清洗后的贷款合同数据"
+    columns:
+      - name: contract_no
+        description: "合同编号"
+        tests:
+          - unique
+          - not_null
+      - name: loan_amount
+        description: "贷款金额"

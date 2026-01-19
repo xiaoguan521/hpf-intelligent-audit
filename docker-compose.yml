@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. 核心数据平台 (ETL & ML)
+  # ==========================================
+  platform:
+    image: xiaoguan521/hpf-platform:latest
+    container_name: hpf-platform
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/hpf-platform/data # DuckDB 数据持久化
+      - ./logs/platform:/app/logs # 日志
+    environment:
+      - DUCKDB_PATH=/app/hpf-platform/data/warehouse.duckdb
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_API_KEY=${LLM_API_KEY}
+    # 默认只是挂起,可通过 cron 或 exec 执行 ETL 任务
+    command: tail -f /dev/null
+
+  # ==========================================
+  # 2. 审计系统后端 (API)
+  # ==========================================
+  audit-backend:
+    image: xiaoguan521/hpf-audit-backend:latest
+    container_name: hpf-audit-backend
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/hpf-platform/data # 读取 Platform 生成的 DuckDB
+      - ./audit_db:/app/hpf-audit/data # 自身的业务库 (SQLite/FAISS)
+      - ./logs/audit:/app/logs # 日志
+    environment:
+      - DUCKDB_PATH=/app/hpf-platform/data/warehouse.duckdb
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_API_KEY=${LLM_API_KEY}
+    ports:
+      - "8000:8000"
+
+  # ==========================================
+  # 3. 审计系统前端 (UI)
+  # ==========================================
+  audit-frontend:
+    image: xiaoguan521/hpf-audit-frontend:latest
+    container_name: hpf-audit-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - audit-backend
+
+volumes:
+  data:
+  audit_db:
+  logs:

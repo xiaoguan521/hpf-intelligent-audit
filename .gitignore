@@ -1,0 +1,103 @@
+# 数据库文件
+# *.db
+!housing_provident_fund.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# 向量数据库 (Generated)
+chroma_db/
+
+# ML 模型文件 (持久化到宿主机,不提交到仓库)
+ml_models/
+*.pkl
+node_modules/
+*.duckdb
+
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+ENV/
+env/
+.venv
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# 大文件/数据源
+*.xlsx
+*.xls
+*.csv
+*.zip
+*.tar.gz
+
+# PDF
+*.pdf
+
+# 日志
+*.log
+logs/
+*.log.*
+
+# 临时文件
+tmp/
+temp/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.users
+*/instantclient_23_0/*

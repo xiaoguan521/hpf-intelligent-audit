@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FAISS Vector Store Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f0f2f6; }
+        .container { display: flex; height: 90vh; gap: 20px; }
+        .plot-area { flex: 2; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 10px; }
+        .info-area { flex: 1; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; overflow-y: auto; }
+        h1 { margin-top: 0; color: #333; }
+        .card { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .label { font-weight: bold; color: #666; font-size: 0.9em; }
+        #details-content { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Skill Vector Visualization (PCA)</h1>
+    <div class="container">
+        <div class="plot-area" id="plot"></div>
+        <div class="info-area">
+            <h2>Details</h2>
+            <div id="details">
+                <p>Hover over or click a point to see details.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var data = [{"x": 0.05054644343419834, "y": 0.782892604563214, "name": "[System] Init Doc", "desc": "Initialization document", "type": "init"}];
+        
+        // Prepare Plotly traces
+        var trace = {
+            x: data.map(d => d.x),
+            y: data.map(d => d.y),
+            text: data.map(d => d.name),
+            mode: 'markers',
+            marker: {
+                size: 12,
+                color: data.map(d => d.type === 'init' ? '#ccc' : '#4CAF50'),
+                opacity: 0.8
+            },
+            type: 'scatter',
+            hoverinfo: 'text'
+        };
+
+        var layout = {
+            title: 'Semantic Space',
+            hovermode: 'closest',
+            dragmode: 'pan',
+            xaxis: { zeroline: false, showgrid: true },
+            yaxis: { zeroline: false, showgrid: true }
+        };
+
+        Plotly.newPlot('plot', [trace], layout, {responsive: true});
+
+        var plotDiv = document.getElementById('plot');
+        
+        // Click event
+        plotDiv.on('plotly_click', function(data){
+            var pt = data.points[0];
+            var idx = pt.pointIndex;
+            var item = window.data[idx];
+            
+            var html = `
+                <div class="card">
+                    <div class="label">Name</div>
+                    <h3>${item.name}</h3>
+                    <div class="label">Type</div>
+                    <div>${item.type}</div>
+                    <div class="label">Description</div>
+                    <p>${item.desc}</p>
+                </div>
+            `;
+            document.getElementById('details').innerHTML = html;
+        });
+        
+        // Hover event (optional, just name)
+    </script>
+</body>
+</html>
+    

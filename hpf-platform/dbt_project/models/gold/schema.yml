@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: fct_loan_features
+    description: "贷款特征宽表 (用于 ML 训练)"
+    columns:
+      - name: contract_no
+        description: "合同编号"
+        tests:
+          - unique
+          - not_null
+      - name: loan_amount
+        description: "贷款金额"
+      - name: loan_term_months
+        description: "贷款期限(月)"
