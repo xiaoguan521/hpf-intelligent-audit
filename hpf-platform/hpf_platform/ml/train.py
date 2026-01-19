@@ -199,15 +199,80 @@ def train_model(
     for i, (feat, imp) in enumerate(feature_importance, 1):
         print(f"{i:2d}. {feat:30s} {imp:.4f}")
     
-    # 6. 保存模型
+    
+    # 6. 保存模型（版本化）
     if model_output_path is None:
-        model_output_path = Path(__file__).parent / "models" / "overdue_model.pkl"
+        model_dir = Path(__file__).parent / "models"
+    else:
+        model_dir = Path(model_output_path).parent
     
-    model_output_path = Path(model_output_path)
-    model_output_path.parent.mkdir(parents=True, exist_ok=True)
+    model_dir.mkdir(parents=True, exist_ok=True)
     
-    joblib.dump(model, model_output_path)
-    print(f"\n💾 模型已保存: {model_output_path}")
+    # 计算最终 F1 分数
+    from datetime import datetime
+    import json
+    
+    final_report = classification_report(y_test, y_pred, output_dict=True)
+    final_f1 = final_report['1']['f1-score']
+    final_precision = final_report['1']['precision']
+    final_recall = final_report['1']['recall']
+    
+    # 生成版本化文件名
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    versioned_filename = f"overdue_model_{timestamp}_f1_{final_f1:.4f}.pkl"
+    versioned_path = model_dir / versioned_filename
+    
+    # 保存版本化模型
+    joblib.dump(model, versioned_path)
+    print(f"\n💾 模型已保存: {versioned_path}")
+    
+    # 同时保存为 latest（用于生产部署）
+    latest_path = model_dir / "overdue_model_latest.pkl"
+    joblib.dump(model, latest_path)
+    print(f"💾 最新模型: {latest_path}")
+    
+    # 更新训练历史
+    history_file = model_dir / "training_history.json"
+    
+    # 读取历史记录
+    if history_file.exists():
+        with open(history_file, 'r', encoding='utf-8') as f:
+            history = json.load(f)
+    else:
+        history = []
+    
+    # 添加本轮记录
+    run_record = {
+        "timestamp": timestamp,
+        "model_type": best_name,
+        "f1_score": float(final_f1),
+        "precision": float(final_precision),
+        "recall": float(final_recall),
+        "accuracy": float(final_report['accuracy']),
+        "data_size": len(X_train) + len(X_test),
+        "train_size": len(X_train),
+        "test_size": len(X_test),
+        "n_features": X_train.shape[1],
+        "model_path": str(versioned_filename)
+    }
+    
+    history.append(run_record)
+    
+    # 保存历史记录
+    with open(history_file, 'w', encoding='utf-8') as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
+    
+    print(f"📊 训练历史已更新: {history_file}")
+    
+    # 显示历史最佳
+    if len(history) > 1:
+        best_historical = max(history, key=lambda x: x['f1_score'])
+        print(f"\n🏆 历史最佳: F1={best_historical['f1_score']:.4f} ({best_historical['timestamp']})")
+        if final_f1 > best_historical['f1_score'] and best_historical['timestamp'] != timestamp:
+            improvement = ((final_f1 - best_historical['f1_score']) / best_historical['f1_score']) * 100
+            print(f"🎉 本轮提升: +{improvement:.2f}%")
+    else:
+        print(f"✅ 这是首次训练！")
     
     return model
 

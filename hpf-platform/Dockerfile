@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libaio1t64 \
     curl \
     git \
+    sed \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Copy and Install hpf-common
