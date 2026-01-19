@@ -11,6 +11,16 @@ on:
       - 'hpf-common/**'
       - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
+    inputs:
+      platform:
+        description: '选择构建平台'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both      # 同时构建 amd64 和 arm64
+          - amd64     # 仅构建 amd64 (快2倍)
+          - arm64     # 仅构建 arm64
 
 env:
   REGISTRY: ghcr.io
@@ -53,6 +63,17 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      
+      - name: Determine platforms
+        id: platforms
+        run: |
+          if [ "${{ github.event.inputs.platform }}" == "amd64" ]; then
+            echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.platform }}" == "arm64" ]; then
+            echo "platforms=linux/arm64" >> $GITHUB_OUTPUT
+          else
+            echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+          fi
 
       - name: Log in to the Container registry
         if: github.event_name != 'pull_request'
@@ -81,7 +102,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.platforms.outputs.platforms }}
           # 缓存优化：使用 GitHub Actions 缓存
           cache-from: type=gha
           cache-to: type=gha,mode=max
