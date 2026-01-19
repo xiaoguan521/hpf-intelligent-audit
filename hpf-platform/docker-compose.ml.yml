@@ -2,22 +2,34 @@ version: '3.8'
 
 services:
   ml-trainer:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # 使用 GitHub Container Registry 预构建镜像
+    # 替换下面的 yourusername/yourrepo 为你的 GitHub 用户名和仓库名
+    image: ghcr.io/${GITHUB_REPOSITORY:-yourusername/yourrepo}/hpf-ml-trainer:latest
+
+    # 本地构建选项（取消注释以使用本地构建）
+    # build:
+    #   context: ..
+    #   dockerfile: hpf-platform/Dockerfile
+
     container_name: hpf-ml-trainer
+    working_dir: /app/hpf-platform
+
     volumes:
       # 数据持久化
-      - ./data:/app/data
+      - ./data:/app/hpf-platform/data
       # 模型输出
-      - ./hpf_platform/ml/models:/app/hpf_platform/ml/models
+      - ./hpf_platform/ml/models:/app/hpf-platform/hpf_platform/ml/models
+      # dbt 输出（可选）
+      - ./dbt_project/target:/app/hpf-platform/dbt_project/target
+
     environment:
       - PYTHONUNBUFFERED=1
-    command: >
-      sh -c " echo '🚀 Starting ML Training Pipeline...' && python scripts/generate_mock_data.py && cd dbt_project && dbt deps && dbt run && cd .. && python hpf_platform/ml/train.py "
+
+    # 默认启动但不执行，等待手动进入容器
+    command: tail -f /dev/null
     # 可选：限制资源
     # deploy:
     #   resources:
     #     limits:
-    #       cpus: '4'
-    #       memory: 8G
+    #       cpus: '8'
+    #       memory: 16G

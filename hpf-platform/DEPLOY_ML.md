@@ -1,17 +1,39 @@
-# Linux 服务器部署指南
+# Linux 服务器部署指南 - ML 训练
 
-## 🐳 Docker 部署模型训练
+## 🚀 GitHub Actions 自动构建（推荐）
 
-### 1. 准备工作
+### 方案优势
+- ✅ 自动构建多平台镜像（amd64/arm64）
+- ✅ 缓存优化，构建速度快
+- ✅ 镜像托管在 GitHub Container Registry
+- ✅ 服务器端直接拉取即用，无需构建
+
+### 1. 启用 GitHub Actions
+
+**一次性配置**：
+1. 推送代码到 GitHub
+2. Actions 自动触发构建（约 5-10 分钟）
+3. 镜像自动发布到 `ghcr.io/你的用户名/仓库名/hpf-ml-trainer:latest`
+
+**查看构建状态**：
+```bash
+# 访问 GitHub Actions 页面
+https://github.com/你的用户名/仓库名/actions
+```
+
+### 2. 服务器端部署
 
 ```bash
 # 克隆代码到服务器
-git clone <your-repo> hpf-project
-cd hpf-project/hpf-platform
+git clone https://github.com/你的用户名/仓库名.git
+cd 仓库名/hpf-platform
 
-# 确保有 Docker 和 Docker Compose
-docker --version
-docker-compose --version
+# 配置镜像地址
+cp .env.example .env
+# 编辑 .env 文件，设置 GITHUB_REPOSITORY=你的用户名/仓库名
+
+# 登录 GHCR（首次需要）
+echo $GITHUB_TOKEN | docker login ghcr.io -u 你的用户名 --password-stdin
 ```
 
 ### 2. 构建镜像
@@ -30,28 +52,46 @@ docker-compose -f hpf-platform/docker-compose.ml.yml build
 - ✅ dbt-core + dbt-duckdb
 - ✅ 所有数据生成工具
 
-### 3. 运行训练
+### 3. 启动容器并训练（推荐方式）
 
-#### 方式 A：一键运行完整 Pipeline
 ```bash
-docker-compose -f hpf-platform/docker-compose.ml.yml up
+# 启动容器
+docker-compose -f docker-compose.ml.yml up -d
+
+# 进入容器
+docker exec -it hpf-ml-trainer bash
 ```
 
-**流程**：
-1. 生成 10万条模拟数据
-2. 运行 dbt 构建数仓
-3. 训练 4个模型（RF/XGB/CatBoost/LR）
-4. 输出最佳模型到 `./hpf_platform/ml/models/`
-
-#### 方式 B：分步执行（推荐用于调试）
+**在容器内执行完整 Pipeline**：
 ```bash
-# 启动容器但不执行训练
-docker-compose -f hpf-platform/docker-compose.ml.yml run --rm ml-trainer bash
-
-# 在容器内手动执行
+# Step 1: 生成 10万条模拟数据
 python scripts/generate_mock_data.py
-cd dbt_project && dbt run && cd ..
+
+# Step 2: 运行 dbt 构建数仓
+cd dbt_project
+dbt deps  # 首次需要安装依赖
+dbt run
+cd ..
+
+# Step 3: 训练模型（RF/CatBoost/XGBoost/LR）
 python hpf_platform/ml/train.py
+```
+
+**一键执行脚本**（可选）：
+```bash
+# 在容器内创建一键脚本
+cat > run_ml_pipeline.sh << 'EOF'
+#!/bin/bash
+set -e
+echo "🚀 Starting ML Training Pipeline..."
+python scripts/generate_mock_data.py
+cd dbt_project && dbt deps && dbt run && cd ..
+python hpf_platform/ml/train.py
+echo "✅ Pipeline completed!"
+EOF
+
+chmod +x run_ml_pipeline.sh
+./run_ml_pipeline.sh
 ```
 
 ### 4. 查看结果
