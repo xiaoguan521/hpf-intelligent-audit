@@ -1,0 +1,62 @@
+# Docker 构建时忽略这些文件/目录
+# 减少构建上下文大小，加快上传速度
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 虚拟环境
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# 文档
+*.md
+!README.md
+docs/
+
+# 测试
+tests/
+*.test.py
+.pytest_cache/
+
+# 日志和数据库
+*.log
+*.db
+*.duckdb
+*.sqlite
+*.sqlite3
+
+# dbt
+dbt_project/target/
+dbt_project/logs/
+dbt_project/dbt_packages/
+
+# ML 模型和数据
+hpf_platform/ml/models/*.pkl
+data/
+logs/
+catboost_info/
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
