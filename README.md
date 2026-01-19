@@ -1,159 +1,120 @@
-# 住房公积金智能审计系统 (重构版)
+# 住房公积金智能审计系统 (HPF Intelligent Audit)
 
-本项目采用模块化架构,由三个独立的 Python 包组成:
+![Build Status](https://github.com/xiaoguan521/hpf-intelligent-audit/actions/workflows/docker-publish.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Docker](https://img.shields.io/badge/docker-ready-green)
 
-## 项目结构
+**hpf-intelligent-audit** 是下一代住房公积金审计平台，采用基于 ReAct Agent 的智能审计架构与现代化的数据处理栈。
 
-```
-test/
-├── hpf-common/          # 公共基础库
-├── hpf-audit/           # 审计系统
-├── hpf-platform/        # 数据平台
-├── .env                 # 环境配置
-├── .venv/               # Python 虚拟环境
-└── README.md            # 本文档
-```
+## 🏗️ 核心架构
 
-## 三大核心包
+本项目采用模块化 Monorepo 架构，包含三个核心子系统：
 
-### 1. hpf-common - 公共基础库
-提供统一的 LLM 客户端、数据库连接管理等基础功能。
+| 模块 | 目录 | 描述 | 技术栈 |
+|------|------|------|--------|
+| **hpf-audit** | `hpf-audit/` | **智能审计核心**。包含后端 API 和前端界面。基于 ReAct Agent，集成了 AI 技能 (Skills) 与知识库检索 (RAG)。 | FastAPI, React, LangChain |
+| **hpf-platform** | `hpf-platform/` | **数据智能平台**。提供数据基础设施，负责 Oracle 到 DuckDB 的 ETL 同步、dbt 分层建模及 ML 风险预测。 | DuckDB, dbt, Scikit-learn |
+| **hpf-common** | `hpf-common/` | **公共基础库**。统一的基础设施层，封装了多模态 LLM 客户端 (OpenAI/NVIDIA) 和异构数据库管理。 | Python |
 
-**主要功能:**
-- LLM 统一客户端 (支持 OpenAI、Anthropic、NVIDIA 等)
-- 数据库连接管理 (SQLite、DuckDB、Oracle)
-- 配置管理和环境变量
+## ✨ 核心特性
 
-**安装:**
+- **智能审计 Agent**: 基于 ReAct 框架，自主规划审计路径，调用工具查询数据。
+- **现代化数据栈**: 使用 DuckDB 作为高性能 OLAP 引擎，dbt 管理 Bronze/Silver/Gold 数据分层。
+- **机器学习集成**: 内置逾期风险预测模型，自动识别高风险贷款。
+- **知识库 RAG**: 基于向量检索的政策法规问答。
+- **云原生部署**: 支持 Docker 容器化部署，适配多架构 (AMD64/ARM64)。
+
+## 🚀 快速开始 (Docker)
+
+最简单的运行方式是使用 Docker Compose。
+
+1. **克隆仓库**
+   ```bash
+   git clone git@github.com:xiaoguan521/hpf-intelligent-audit.git
+   cd hpf-intelligent-audit
+   ```
+
+2. **配置环境变量**
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 填入 LLM_API_KEY 等信息
+   ```
+
+3. **启动服务**
+   ```bash
+   docker-compose up -d
+   ```
+
+服务启动后，可以通过浏览器访问：
+- **前端界面**: http://localhost
+- **后端 API**: http://localhost:8000/docs
+
+## 🛠️ 本地开发指南
+
+如果您需要进行代码开发，建议在虚拟环境中运行。
+
+### 环境准备
+
+1. **创建虚拟环境**
+   ```bash
+   python3 -9 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+2. **安装依赖 (按顺序)**
+   ```bash
+   # 1. 安装基础库
+   pip install -e "./hpf-common[llm,db]"
+
+   # 2. 安装数据平台
+   pip install -e "./hpf-platform"
+
+   # 3. 安装审计系统
+   pip install -e "./hpf-audit"
+   ```
+
+### 运行模块
+
+**运行 ETL 与 ML 任务:**
 ```bash
-cd hpf-common
-pip install -e ".[llm,db]"
-```
-
-### 2. hpf-audit - 审计系统
-基于 ReAct Agent 的智能审计系统,包含 AI Skills、知识库和前端界面。
-
-**主要功能:**
-- ReAct Agent (智能对话和任务执行)
-- AI Skills 生成和管理
-- 知识库 (FAISS 向量检索)
-- React 前端界面
-
-**安装:**
-```bash
-cd hpf-audit
-pip install -e .
-```
-
-**运行:**
-```bash
-# 启动后端
-python run.py
-
-# 启动前端 (另一个终端)
-cd frontend-new
-npm install
-npm run dev
-```
-
-### 3. hpf-platform - 数据平台
-Oracle → DuckDB 的 ETL 同步、dbt 数据建模和 ML 预测。
-
-**主要功能:**
-- ETL: Oracle → DuckDB 智能同步
-- dbt: Bronze-Silver-Gold 数据分层
-- ML: 逾期风险预测模型
-
-**安装:**
-```bash
-cd hpf-platform
-pip install -e .
-```
-
-**使用:**
-```bash
-# ETL 同步
+# 运行智能同步
 python -m hpf_platform.etl.app --smart --auto
 
-# dbt 建模
-cd dbt_project
-dbt run
+# 运行 dbt 模型
+cd hpf-platform/dbt_project && dbt run
 
-# ML 训练
+# 训练预测模型
 python -m hpf_platform.ml.train data/warehouse.duckdb
 ```
 
-## 快速开始
-
-### 1. 安装依赖
-
+**运行审计系统:**
 ```bash
-# 激活虚拟环境
-source .venv/bin/activate
-
-# 按顺序安装三个包
-cd hpf-common && pip install -e ".[llm,db]"
-cd ../hpf-audit && pip install -e .
-cd ../hpf-platform && pip install -e .
-```
-
-### 2. 配置环境变量
-
-复制 `.env.example` 为 `.env` 并配置:
-
-```bash
-cp .env.example .env
-# 编辑 .env 文件,填入 API Keys 等配置
-```
-
-### 3. 运行系统
-
-```bash
-# 启动审计系统后端
+# 启动后端
 cd hpf-audit
 python run.py
 
-# 启动前端 (新终端)
-cd hpf-audit/frontend-new
-npm run dev
+# 启动前端 (需 Node.js 环境)
+cd frontend
+npm install && npm run dev
 ```
 
-访问 http://localhost:5173 查看前端界面。
-
-## 数据流架构
+## 📂 项目结构
 
 ```
-Oracle 生产库
-    ↓ (ETL)
-DuckDB ODS 层
-    ↓ (dbt Bronze)
-原始数据视图
-    ↓ (dbt Silver)  
-清洗标准化
-    ↓ (dbt Gold)
-特征宽表
-    ↓ (ML)
-预测模型 → ReAct Agent → 前端界面
+.
+├── hpf-audit/           # [应用层] 审计业务系统
+│   ├── hpf_audit/       # Python 后端代码
+│   ├── frontend/        # React 前端代码
+│   └── backend.Dockerfile
+├── hpf-platform/        # [数据层] 数据处理平台
+│   ├── hpf_platform/    # ETL & ML 代码
+│   ├── dbt_project/     # dbt 数据模型
+│   └── Dockerfile
+├── hpf-common/          # [基础层] 公共依赖库
+├── docker-compose.yml   # 容器编排配置
+└── .github/             # GitHub Actions工作流
 ```
 
-## Git 分支说明
+## 📄 License
 
-- `1.0.0`: 重构前的完整代码 (保留备份)
-- `1.0.1`: 重构后的模块化架构 (当前分支)
-
-## 文档
-
-- [hpf-common README](./hpf-common/README.md)
-- [hpf-audit README](./hpf-audit/README.md)  
-- [hpf-platform README](./hpf-platform/README.md)
-
-## 技术栈
-
-- **后端**: Python 3.9+, FastAPI, LangChain
-- **前端**: React, TypeScript, Ant Design, Vite
-- **数据**: DuckDB, FAISS, dbt
-- **AI**: OpenAI, Anthropic, NVIDIA LLM
-
-## License
-
-内部项目
+Internal Project. All rights reserved.
