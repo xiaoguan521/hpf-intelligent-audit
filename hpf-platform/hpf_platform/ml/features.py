@@ -94,6 +94,33 @@ def load_features(
             # Log transform income to compress extreme values
             df['log_income'] = np.log1p(df['monthly_income'])
             
+            # === 新增高价值特征（提升 F1-Score） ===
+            
+            # 1. 收入稳定性指标（反向 DTI）
+            df['income_loan_ratio'] = df['monthly_income'] / (df['loan_amount'] + 1)
+            
+            # 2. 信用评分归一化（0-1）
+            df['credit_score_norm'] = (df['credit_score'] - 300) / 550
+            
+            # 3. 综合风险指标（DTI × 信用）
+            df['dti_credit_risk'] = df['dti_ratio'] * (1 - df['credit_score_norm'])
+            
+            # 4. 每月还款负担
+            if 'loan_period_months' in df.columns:
+                df['monthly_payment'] = df['loan_amount'] / (df['loan_period_months'] + 1)
+                df['payment_income_ratio'] = df['monthly_payment'] / (df['monthly_income'] + 1)
+            
+            # 5. 年龄-信用交叉特征
+            if 'age' in df.columns:
+                df['age_credit_interaction'] = df['age'] * df['credit_score_norm']
+            
+            # 6. 职业风险归一化
+            df['occupation_risk'] = df['occupation'] / 6.0
+            
+            # 7. 城市层级风险（反转：一线城市风险低）
+            if 'city_tier' in df.columns:
+                df['city_risk'] = (4 - df['city_tier']) / 3.0
+            
         # Fill NaNs with 0
         df = df.fillna(0)
         

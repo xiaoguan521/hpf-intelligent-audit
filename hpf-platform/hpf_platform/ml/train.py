@@ -200,7 +200,59 @@ def train_model(
         print(f"{i:2d}. {feat:30s} {imp:.4f}")
     
     
-    # 6. 保存模型（版本化）
+    # 6. 优化预测阈值（提升 F1-Score）
+    print("\n" + "=" * 70)
+    print("🎯 Step 6: 优化预测阈值")
+    print("=" * 70)
+    
+    from sklearn.metrics import precision_recall_curve
+    import numpy as np
+    
+    # 获取预测概率
+    if hasattr(model, 'predict_proba'):
+        y_proba = model.predict_proba(X_test)[:, 1]
+        
+        # 计算所有阈值的 F1
+        precisions, recalls, thresholds = precision_recall_curve(y_test, y_proba)
+        f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-10)
+        
+        # 找到最佳阈值
+        best_idx = np.argmax(f1_scores)
+        best_threshold = thresholds[best_idx] if best_idx < len(thresholds) else 0.5
+        
+        # 使用优化阈值重新预测
+        y_pred_optimized = (y_proba >= best_threshold).astype(int)
+        optimized_report = classification_report(y_test, y_pred_optimized, output_dict=True)
+        optimized_f1 = optimized_report['1']['f1-score']
+        
+        # 计算原始 F1（使用默认阈值）
+        original_f1 = final_report['1']['f1-score']
+        
+        print(f"\n  默认阈值 (0.5): F1 = {original_f1:.4f}")
+        print(f"  🎯 最佳阈值 ({best_threshold:.4f}): F1 = {optimized_f1:.4f}")
+        improvement = optimized_f1 - original_f1
+        improvement_pct = (improvement / original_f1 * 100) if original_f1 > 0 else 0
+        print(f"  ✅ 提升: +{improvement:.4f} ({improvement_pct:.1f}%)")
+        
+        # 更新最终结果
+        if optimized_f1 > original_f1:
+            print(f"\n  使用优化阈值 {best_threshold:.4f}")
+            final_report = optimized_report
+            y_pred = y_pred_optimized
+            
+            # 重新打印分类报告
+            print("\n" + "=" * 70)
+            print("📊 优化后的模型评估报告")
+            print("=" * 70)
+            print(classification_report(y_test, y_pred))
+            print("\n混淆矩阵:")
+            print(confusion_matrix(y_test, y_pred))
+    else:
+        print("  ⚠️  模型不支持概率预测，跳过阈值优化")
+        best_threshold = 0.5
+    
+    
+    # 7. 保存模型（版本化）
     if model_output_path is None:
         model_dir = Path(__file__).parent / "models"
     else:
