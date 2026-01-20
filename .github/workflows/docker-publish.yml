@@ -95,6 +95,7 @@ jobs:
             latest
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context }}
@@ -109,3 +110,79 @@ jobs:
           # 构建参数优化
           build-args: |
             BUILDKIT_INLINE_CACHE=1
+
+      - name: 镜像构建摘要
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "### 🚀 镜像构建成功: ${{ matrix.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**📦 镜像名称:** \`${{ matrix.image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**🏷️ 镜像标签:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**📋 镜像摘要:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**🔧 构建平台:** \`${{ steps.platforms.outputs.platforms }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**💡 拉取命令:**" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          echo "docker pull $FIRST_TAG" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: 发送 Telegram 通知
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # 检查 Telegram secrets 是否配置
+          if [ -z "${TELEGRAM_BOT_TOKEN}" ] || [ -z "${TELEGRAM_CHAT_ID}" ]; then
+            echo "⚠️ Telegram secrets 未配置，跳过通知"
+            exit 0
+          fi
+          
+          # 判断构建状态
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS_ICON="✅"
+            STATUS_TEXT="构建成功"
+          else
+            STATUS_ICON="❌"
+            STATUS_TEXT="构建失败"
+          fi
+          
+          # 获取第一个镜像标签
+          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          
+          # 构建消息内容
+          MESSAGE="🐋 <b>Docker 镜像构建通知</b>%0A%0A"
+          MESSAGE="${MESSAGE}${STATUS_ICON} <b>状态:</b> ${STATUS_TEXT}%0A"
+          MESSAGE="${MESSAGE}📦 <b>镜像:</b> <code>${{ matrix.image }}</code>%0A"
+          MESSAGE="${MESSAGE}🏷️ <b>标签:</b> <code>${FIRST_TAG}</code>%0A"
+          MESSAGE="${MESSAGE}🔧 <b>平台:</b> <code>${{ steps.platforms.outputs.platforms }}</code>%0A"
+          MESSAGE="${MESSAGE}🌿 <b>分支:</b> <code>${{ github.ref_name }}</code>%0A"
+          MESSAGE="${MESSAGE}👤 <b>提交者:</b> ${{ github.actor }}%0A"
+          MESSAGE="${MESSAGE}📝 <b>提交信息:</b> <code>${{ github.event.head_commit.message }}</code>%0A%0A"
+          MESSAGE="${MESSAGE}🔗 <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">查看构建详情</a>"
+          
+          # 发送到 Telegram
+          echo "📤 正在发送 Telegram 通知..."
+          RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="${MESSAGE}" \
+            -d parse_mode="HTML" \
+            -d disable_web_page_preview=true)
+          
+          # 检查发送结果
+          if echo "$RESPONSE" | grep -q '"ok":true'; then
+            echo "✅ Telegram 通知发送成功"
+          else
+            echo "❌ Telegram 通知发送失败: $RESPONSE"
+          fi
